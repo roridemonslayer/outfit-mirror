@@ -1,4 +1,4 @@
-from transformers import SegformerImageProcessor AutoModelForSemanticSegmentation
+from transformers import SegformerImageProcessor, AutoModelForSemanticSegmentation
 from PIL import Image
 import torch 
 
