@@ -62,3 +62,17 @@ for h1, h2 in combinations(hue,2):
 counts = Counter(categories)
 print(counts)
 print(category_distances)
+
+analogous_avg = sum(category_distances["analogous"]) / len(category_distances["analogous"])
+triadic_avg = sum(category_distances["triadic"]) / len(category_distances["triadic"])
+print(analogous_avg, triadic_avg) #compare the two to breawk the tie 
+
+analogous_gap = abs(analogous_avg - 45)
+triadic_gap = abs(triadic_avg - 120)
+
+if analogous_gap < triadic_gap:
+    winner = "analogous"
+else:
+    winner = "triadic"
+
+print(winner)

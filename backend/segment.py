@@ -21,5 +21,6 @@ def segment_image(image_path):
     outfit_mask = predicted_mask != 0 #this is the mask of the outfit, where 0 is the background and 1 is the outfit.
     return outfit_mask
 
-mask = segment_image("images.jpeg")
-print(mask.sum())
+if __name__ == "__main__":
+    mask = segment_image("images.jpeg")
+    print(mask.sum())
