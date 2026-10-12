@@ -20,4 +20,6 @@ print(image_array.shape)
 
 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_array)
 results = pose_landmarker.detect(mp_image)
-print(results.pose_landmarks)
+
+landmarks = results.pose_landmarks[0]
+print(landmarks[20].y)
