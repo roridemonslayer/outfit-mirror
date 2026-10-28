@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>outfit mirror</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23c8ff3d'/></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="logo"><span class="dot"></span>outfit mirror</div>
+    <div class="modes" role="tablist">
+      <button class="pill active" data-mode="photo" role="tab">Photo</button>
+      <button class="pill" data-mode="live" role="tab">Live</button>
+    </div>
+  </header>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="track">
+      <span>a mirror, not a store</span><span>✦</span><span>aesthetic</span><span>✦</span><span>color harmony</span><span>✦</span><span>proportion</span><span>✦</span><span>no login, nothing saved</span><span>✦</span>
+      <span>a mirror, not a store</span><span>✦</span><span>aesthetic</span><span>✦</span><span>color harmony</span><span>✦</span><span>proportion</span><span>✦</span><span>no login, nothing saved</span><span>✦</span>
+    </div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <h1>What's your<br><em>fit</em> saying?</h1>
+      <p class="sub">Show the mirror an outfit. It reads the aesthetic, the color harmony and the proportions, and tells you why.</p>
+    </section>
+
+    <section class="studio">
+      <div class="stage-wrap">
+        <!-- photo mode: custom drop zone -->
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="image/*" hidden>
+          <div class="drop-inner">
+            <div class="drop-icon">↑</div>
+            <div class="drop-title">Drop a full-length photo</div>
+            <div class="drop-hint">or click to choose one · JPG or PNG, whole outfit in frame</div>
+          </div>
+        </label>
+
+        <!-- live mode: camera -->
+        <div class="live" id="live" hidden>
+          <video id="video" playsinline muted></video>
+          <div class="live-status" id="liveStatus">Starting camera…</div>
+          <div class="countdown" id="countdown" hidden></div>
+        </div>
+
+        <!-- the analyzed image with mask, scan line and landmark dots -->
+        <div class="stage" id="stage" hidden>
+          <div class="frame">
+            <img id="photo" alt="your outfit">
+            <img id="overlay" class="overlay" alt="">
+            <canvas id="scan"></canvas>
+          </div>
+          <button class="pill ghost again" id="again">New photo</button>
+        </div>
+      </div>
+
+      <aside class="results" id="results">
+        <div class="tile aesthetic idle" id="aestheticTile">
+          <div class="eyebrow">Aesthetic</div>
+          <div class="big" id="aestheticName">—</div>
+          <div class="reason" id="aestheticReason">Your read shows up here.</div>
+          <div class="runners" id="runners"></div>
+        </div>
+
+        <div class="tile compare">
+          <div class="row">
+            <div class="eyebrow">Compare to</div>
+            <select id="target"><option value="">pick an aesthetic</option></select>
+          </div>
+          <div class="compare-body" id="compareBody" hidden>
+            <div class="meter"><div class="fill" id="matchFill"></div></div>
+            <div class="match" id="matchLabel"></div>
+            <div class="reason" id="compareReason"></div>
+          </div>
+        </div>
+
+        <div class="tile score" id="colorTile">
+          <div class="row"><div class="eyebrow">Color harmony</div><div class="num" id="colorScore">—</div></div>
+          <div class="label" id="colorLabel"></div>
+          <div class="swatches" id="swatches"></div>
+          <div class="reason" id="colorReason"></div>
+        </div>
+
+        <div class="tile score" id="proportionTile">
+          <div class="row"><div class="eyebrow">Proportion</div><div class="num" id="proportionScore">—</div></div>
+          <div class="label" id="proportionLabel"></div>
+          <div class="reason" id="proportionReason"></div>
+        </div>
+
+        <div class="tile tips" id="tipsTile" hidden>
+          <div class="eyebrow">Try this</div>
+          <ul id="tips"></ul>
+        </div>
+      </aside>
+    </section>
+
+    <p class="error" id="error" hidden></p>
+  </main>
+
+  <footer>Feedback is about the clothes and how they're styled, never the body wearing them. Photos are analyzed and forgotten.</footer>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

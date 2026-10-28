@@ -4,7 +4,7 @@
 
 I built it because I'm always putting fits together and wanted to see whether I could build something that actually understands outfit composition.
 
-> 🚧 **Status: early development.** Segmentation works, and color harmony scoring is in progress. See the [roadmap](#roadmap).
+> **Status: working locally.** Photo and live-camera modes, aesthetic detection and compare, color harmony and proportion scoring all run end to end on a laptop (about 3 seconds per photo on CPU). Deployment is next. See the [roadmap](#roadmap).
 
 ---
 
@@ -49,34 +49,43 @@ Proportion feedback always describes **the garment and its styling effect**, nev
 | Component | Choice |
 |---|---|
 | Segmentation | Pretrained SegFormer fashion model ([`sayeed99/segformer-b2-fashion`](https://huggingface.co/sayeed99/segformer-b2-fashion)) |
-| Capture / gesture | MediaPipe Hands + Pose |
-| Color analysis | OpenCV / scikit-learn (k-means) |
-| Aesthetic embeddings | CLIP (open-source checkpoint) |
-| Backend | Python |
-| Frontend | Single page, no login, no saved history |
-| Deployment | AWS |
+| Pose / gesture | MediaPipe Pose (Python) and Gesture Recognizer (in the browser) |
+| Color analysis | scikit-learn k-means, HSV hue math |
+| Aesthetic embeddings | CLIP ([`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32)) |
+| Backend | Python, FastAPI |
+| Frontend | Single page, plain HTML/CSS/JS, no login, no saved history |
+| Deployment | AWS (planned) |
 
 ## Project structure
 
 ```
 outfit-mirror/
 ├── backend/
-│   ├── segment.py         # segment_image(path) → boolean outfit mask
-│   ├── color-harmony.py   # dominant colors + hue-relationship classification
-│   ├── porportion.py      # proportion scoring (planned)
-│   ├── vibe-match.py      # aesthetic detection / compare (planned)
-│   ├── feedback.py        # combines sub-scores into explainable output (planned)
-│   ├── main.py            # pipeline entry point (planned)
-│   └── images.jpeg        # sample test image
-└── frontend/              # mirror UI (planned)
+│   ├── segment.py         # SegFormer: label every pixel with a garment (shirt, pants, dress, belt, shoe, ...)
+│   ├── proportion.py      # MediaPipe pose, main-person isolation, proportion scoring
+│   ├── color_harmony.py   # dominant colors, hue relationships, color score
+│   ├── vibe_match.py      # CLIP aesthetic detection and compare
+│   ├── feedback.py        # combines sub-scores into explainable output
+│   ├── main.py            # pipeline: photo in, feedback out (also a CLI)
+│   ├── server.py          # FastAPI: /api/analyze, /api/aesthetics, serves the UI
+│   └── test_images/       # street-style photos used for calibration (see SOURCES.md)
+└── frontend/              # mirror UI: index.html, style.css, app.js (no build step)
 ```
 
-### Pipeline so far
+### How the pipeline works
 
-- **Segmentation (`segment.py`):** runs SegFormer on the image, upsamples the logits to the original size, and collapses the model's labels into a single outfit mask. Everything that isn't background counts as outfit; the mask isn't split per garment.
-- **Color harmony (`color-harmony.py`):** pulls the clothing pixels using the mask and runs k-means with 5 clusters to find the dominant colors. It converts each color to HSV hue degrees, then computes the circular hue distance for every pair. Each pair is classified as monochrome (0°), analogous (45°), triadic (120°), or complementary (180°) by nearest match, and a majority vote picks the overall harmony.
+1. **Find the person.** MediaPipe Pose finds 33 body landmarks for the main person, and the photo is cropped to them.
+2. **Segment the outfit.** SegFormer labels every pixel with a garment class. Clothing blobs that don't touch the main person's skeleton are dropped, so people in the background never count.
+3. **Color harmony.** K-means finds the 5 dominant outfit colors. Neutrals (black, white, gray) are set aside because they have no meaningful hue. The rest are compared pairwise by circular hue distance and classified as monochrome, analogous, triadic or complementary (majority vote, with a tiebreaker on closeness to the ideal gap). The score rewards pairs that land cleanly on a harmony, and penalizes more than 3 hue families.
+4. **Proportion.** The visual break (belt, tuck or the top's hem) is located along the shoulder-to-ankle line. A 1:2 or 2:1 split reads longest; an even 1:1 split reads blockier. Garment widths relative to shoulders and hips classify the top and bottom as relaxed or fitted, and the balance between them is scored.
+5. **Aesthetic.** CLIP compares the outfit to written descriptions of 16 aesthetics. It also rates plain traits (polished, patterned, sporty, vintage, soft); palette and fit traits come from the measured colors and proportions instead of CLIP. Each aesthetic leans a certain way on those traits, so compare mode can name exactly what's pulling an outfit away from a target.
+6. **Feedback.** Sub-scores, each with a reason, plus tips. No single overall number.
 
-## Getting started
+### Live mode
+
+The browser runs MediaPipe's gesture recognizer on the webcam feed. Hold up an open palm ✋ for under a second, lower it during the 3-2-1 countdown, and the frame is captured and analyzed. Space bar works as a fallback trigger.
+
+## Running it
 
 Requires Python 3.12.
 
@@ -86,33 +95,35 @@ cd outfit-mirror/backend
 
 python3 -m venv venv
 source venv/bin/activate
-pip install torch transformers pillow numpy scikit-learn
+pip install -r requirements.txt
 
-# Run segmentation on the sample image
-python segment.py
-
-# Run color harmony analysis on the sample image
-python color-harmony.py
+uvicorn server:app --port 8000
 ```
 
-The SegFormer weights download from Hugging Face on the first run. Scripts currently read `images.jpeg` from the `backend/` directory, so run them from there.
+Then open http://localhost:8000. The SegFormer and CLIP weights (about 700 MB) download from Hugging Face on the first run, so that start takes a few minutes. After that, startup takes about 15 seconds.
+
+From the command line:
+
+```bash
+python main.py test_images/t7.jpg --target "old money"
+```
 
 ## Roadmap
 
 - [x] **Phase 0 — Setup:** project folders, virtual environment, core packages
 - [x] **Phase 1 — Segmentation:** SegFormer outfit mask via `segment_image()`
-- [ ] **Phase 2 — Color harmony scoring:** *in progress*; finishing the tiebreaker (averaging distances within tied categories)
-- [ ] **Phase 3 — Pose / proportion scoring:** MediaPipe pose landmarks, outfit silhouette relative to body joints
-- [ ] **Phase 4 — Vibe / aesthetic matching:** CLIP embeddings; detect mode plus optional compare mode
-- [ ] **Phase 5 — Feedback synthesis:** combine sub-scores into one structured, explainable result
-- [ ] **Phase 6 — Live video + gesture capture:** webcam mode, hand-gesture trigger, frame-quality gating
-- [ ] **Phase 7 — API layer:** wrap the pipeline so a server can call it
-- [ ] **Phase 8 — Frontend / mirror UI:** photo upload + live video, mask overlay, color swatches, pose skeleton, scores
-- [ ] **Phase 9 — Deploy:** backend and frontend live on AWS
+- [x] **Phase 2 — Color harmony scoring:** dominant colors, neutral handling, harmony vote with tiebreaker, score and explanation
+- [x] **Phase 3 — Pose / proportion scoring:** break position, relaxed vs fitted volume, main-person isolation
+- [x] **Phase 4 — Vibe / aesthetic matching:** CLIP detect mode plus compare mode with "what's pulling it away"
+- [x] **Phase 5 — Feedback synthesis:** sub-scores with reasons, tips, body-neutral language
+- [x] **Phase 6 — Live video + gesture capture:** webcam mode, open-palm trigger, countdown
+- [x] **Phase 7 — API layer:** FastAPI `/api/analyze`
+- [x] **Phase 8 — Frontend / mirror UI:** photo upload + live video, mask overlay, color swatches, pose skeleton scan, scores
+- [ ] **Phase 9 — Deploy**
 
 ### Open questions
 
-- Final list of aesthetic presets and their reference images
-- A composite score formula, or sub-scores only
+- Reference images per aesthetic, to sharpen detection beyond text descriptions
+- A larger CLIP checkpoint, if hosting has the memory for it
 - A shareable result card (to revisit once real results exist)
 - Which AWS services to use for backend hosting (depends on final model weight)
