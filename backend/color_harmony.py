@@ -58,10 +58,10 @@ def color_name(r, g, b):
         return "olive"
     if name in ("red", "pink") and v < 0.5:
         return "burgundy"
-    if name == "blue" and s < 0.6:
-        return "denim blue"
     if name == "blue" and v < 0.4:
         return "navy"
+    if name == "blue" and s < 0.6:
+        return "denim blue"
     if v < 0.45:
         return "dark " + name
     if s < 0.45 and v > 0.7:
