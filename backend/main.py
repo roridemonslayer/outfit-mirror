@@ -64,7 +64,7 @@ def analyze(image, target=None, with_vibe=True):
     if with_vibe:
         from vibe_match import analyze_vibe #CLIP is the slowest model to load, so only load it when needed
         t = time.time()
-        vibe = analyze_vibe(crop, labels, target)
+        vibe = analyze_vibe(crop, labels, target, colors, proportion)
         timings["vibe"] = time.time() - t
 
     from feedback import build_feedback

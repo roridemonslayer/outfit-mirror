@@ -109,7 +109,8 @@ def analyze_colors(image_array, labels):
         r, g, b = color
         h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
         swatches.append({"hex": "#%02x%02x%02x" % (int(r), int(g), int(b)), "share": round(float(share), 3),
-                         "name": color_name(r, g, b), "hue": round(float(h) * 360, 1), "neutral": bool(is_neutral(s, v))})
+                         "name": color_name(r, g, b), "hue": round(float(h) * 360, 1), "value": round(float(v), 3),
+                         "neutral": bool(is_neutral(s, v))})
 
     chromatic = [c for c in swatches if not c["neutral"] and c["share"] >= 0.04]
     neutral_share = sum(c["share"] for c in swatches if c["neutral"])
